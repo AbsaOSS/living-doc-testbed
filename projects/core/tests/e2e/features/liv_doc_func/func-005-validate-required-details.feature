@@ -15,6 +15,10 @@
 #
 #   AC:FUNC-005-02 (v1.0.0 - active)
 #     - A date of birth in the future is rejected with an inline error.
+#
+#   AC:FUNC-005-03 (v1.0.0 - active)
+#     - Filling in the {required-detail} clears the inline error under it.
+#     - required-detail: name, date-of-birth, address
 # =============================================================================
 
 @FUNC_ID:FUNC-005
@@ -49,3 +53,19 @@ Feature: Membership Sign-up Wizard - Validate Required Details
     Given the applicant is on the details step
     When the applicant enters a date of birth of 2099-01-01
     Then an inline error is shown under the date of birth
+
+  # AC:FUNC-005-03 (v1.0.0 - active) - filling in a required detail clears its error | required-detail: name
+  @AC:FUNC-005-03/required-detail:name
+  Scenario: Filling in the name clears its error
+    Given the applicant is on the details step
+    And the applicant has continued with the name left empty
+    When the applicant enters the name "Ada Lovelace"
+    Then no error is shown under the name
+
+  # AC:FUNC-005-03 (v1.0.0 - active) - filling in a required detail clears its error | required-detail: date of birth
+  @AC:FUNC-005-03/required-detail:date-of-birth
+  Scenario: Filling in the date of birth clears its error
+    Given the applicant is on the details step
+    And the applicant has continued with the date of birth left empty
+    When the applicant enters a date of birth of 1990-05-14
+    Then no error is shown under the date of birth
