@@ -16,6 +16,10 @@
 #   AC:FUNC-008-02 (v1.0.0 - active)
 #     - Choosing "Newest first" orders the results by publication date, newest
 #       first.
+#
+#   AC:FUNC-008-03 (v1.0.0 - active)
+#     - The {sort-order} applies to every page of results, not only the first.
+#     - sort-order: relevance, newest-first
 # =============================================================================
 
 @FUNC_ID:FUNC-008
@@ -35,3 +39,18 @@ Feature: Catalogue Search Page - Sort Results
     Given the search for "dragons" shows "The Hobbit" from 1937 and "Temeraire" from 2006
     When the member sorts by "Newest first"
     Then "Temeraire" is listed before "The Hobbit"
+
+  # AC:FUNC-008-03 (v1.0.0 - active) - the order holds on every page of results | sort-order: relevance
+  @AC:FUNC-008-03/sort-order:relevance
+  Scenario: Relevance order continues on the next page
+    Given the search for "dragons" returns more than 20 results
+    When the member opens the second page of results
+    Then the second page continues the relevance order of the first
+
+  # AC:FUNC-008-03 (v1.0.0 - active) - the order holds on every page of results | sort-order: newest first
+  @AC:FUNC-008-03/sort-order:newest-first
+  Scenario: Newest-first order continues on the next page
+    Given the search for "dragons" returns more than 20 results
+    And the member sorts by "Newest first"
+    When the member opens the second page of results
+    Then the second page continues the newest-first order of the first
