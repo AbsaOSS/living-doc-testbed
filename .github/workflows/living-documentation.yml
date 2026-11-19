@@ -16,7 +16,6 @@ on:
     branches: [master, 'support/*']
     paths:
       - .github/workflows/living-documentation.yml
-      - docs/living-doc-generation.md
       - projects/core/tests/e2e/features/liv_doc_us/**
       - projects/core/tests/e2e/features/liv_doc_func/**
       - projects/core/tests/e2e/pages/**
@@ -160,4 +159,5 @@ jobs:
             "output/living-documentation/generator-markdown/ui-test-catalog.md" \
             "output/living-documentation/generator-markdown/coverage-matrix.md" \
             "output/living-documentation/toolkit/coverage-matrix.json" \
+            --repo "$GITHUB_REPOSITORY" \
             --clobber
