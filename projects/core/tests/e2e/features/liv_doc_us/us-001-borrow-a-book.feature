@@ -66,4 +66,3 @@ Feature: Borrow a Book
     When the member borrows "Dune" from the catalogue
     Then a printable loan slip for "Dune" is offered
 
-# Trigger smoke test for PR #6; comment-only, with no scenario behavior change.
