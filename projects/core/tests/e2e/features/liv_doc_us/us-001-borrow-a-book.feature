@@ -65,3 +65,4 @@ Feature: Borrow a Book
     Given the book "Dune" is available
     When the member borrows "Dune" from the catalogue
     Then a printable loan slip for "Dune" is offered
+

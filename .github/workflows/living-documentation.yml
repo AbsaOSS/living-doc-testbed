@@ -1,0 +1,163 @@
+name: Generate living documentation
+
+on:
+  workflow_dispatch:
+    inputs:
+      view:
+        description: Documentation view to generate.
+        required: true
+        type: choice
+        default: inner
+        options:
+          - inner
+          - release
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [master, 'support/*']
+    paths:
+      - .github/workflows/living-documentation.yml
+      - docs/living-doc-generation.md
+      - projects/core/tests/e2e/features/liv_doc_us/**
+      - projects/core/tests/e2e/features/liv_doc_func/**
+      - projects/core/tests/e2e/pages/**
+  push:
+    branches: [master, 'support/*']
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  generate-living-documentation:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4.2.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.0.0
+        with:
+          python-version: '3.14'
+
+      - name: Collect living documentation sources
+        uses: AbsaOSS/living-doc-collector-gh@b197a608d2dfc816a2934ae4fa6f2cdf3fb5b611 # v0.2.0
+        with:
+          project-id: library-loans
+          doc-source: true
+          doc-source-repositories: |
+            [
+              {
+                "organization-name": "AbsaOSS",
+                "repository-name": "living-doc-testbed",
+                "us-paths": ["${{ github.workspace }}/projects/core/tests/e2e/features/liv_doc_us"],
+                "func-paths": ["${{ github.workspace }}/projects/core/tests/e2e/features/liv_doc_func"],
+                "pages-paths": ["${{ github.workspace }}/projects/core/tests/e2e/pages"]
+              }
+            ]
+          ui-tests: true
+          ui-tests-repositories: |
+            [
+              {
+                "organization-name": "AbsaOSS",
+                "repository-name": "living-doc-testbed",
+                "paths": [
+                  "${{ github.workspace }}/projects/core/tests/e2e/features/liv_doc_us",
+                  "${{ github.workspace }}/projects/core/tests/e2e/features/liv_doc_func"
+                ]
+              }
+            ]
+
+      - name: Normalize living documentation
+        uses: AbsaOSS/living-doc-toolkit@fea9aa62d7805fbc675a5816f513a7d0259b7075 # v0.1.0
+        with:
+          command: normalize-docs
+          input: output/collector-gh/doc-source/doc-source.json
+          output: output/toolkit/generator-ready.json
+          view: ${{ inputs.view || (github.event_name == 'release' && 'release') || 'inner' }}
+
+      - name: Normalize UI tests
+        uses: AbsaOSS/living-doc-toolkit@fea9aa62d7805fbc675a5816f513a7d0259b7075 # v0.1.0
+        with:
+          command: normalize-tests
+          input: output/collector-gh/ui-tests/ui-tests.json
+          output: output/toolkit/ui-test-catalog.json
+
+      - name: Build coverage matrix
+        uses: AbsaOSS/living-doc-toolkit@fea9aa62d7805fbc675a5816f513a7d0259b7075 # v0.1.0
+        with:
+          command: coverage-matrix
+          input: output/collector-gh/doc-source/doc-source.json
+          tests-input: output/collector-gh/ui-tests/ui-tests.json
+          output: output/toolkit/coverage-matrix.json
+          view: ${{ inputs.view || (github.event_name == 'release' && 'release') || 'inner' }}
+
+      - name: Generate technical project Markdown
+        id: generate-markdown
+        uses: AbsaOSS/living-doc-generator-markdown@005a058ae6b248a66c34e8bacdbe2217bb2a981d # v0.1.0
+        with:
+          document-type: technical-project
+          source-path: output/toolkit/generator-ready.json
+
+      - name: Generate UI test catalog Markdown
+        id: generate-ui-test-catalog
+        uses: AbsaOSS/living-doc-generator-markdown@005a058ae6b248a66c34e8bacdbe2217bb2a981d # v0.1.0
+        with:
+          document-type: ui-test-catalog
+          source-path: output/toolkit/ui-test-catalog.json
+
+      - name: Generate coverage Markdown
+        id: generate-coverage
+        uses: AbsaOSS/living-doc-generator-markdown@005a058ae6b248a66c34e8bacdbe2217bb2a981d # v0.1.0
+        with:
+          document-type: coverage-matrix
+          source-path: output/toolkit/coverage-matrix.json
+
+      - name: Validate generated outputs
+        shell: bash
+        run: |
+          test -s "${{ steps.generate-markdown.outputs.output-path }}/technical-project.md"
+          test -s "${{ steps.generate-ui-test-catalog.outputs.output-path }}/ui-test-catalog.md"
+          test -s "${{ steps.generate-coverage.outputs.output-path }}/coverage-matrix.md"
+          test -s output/toolkit/coverage-matrix.json
+
+      - name: Upload generated documents and coverage
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: living-documentation-${{ github.event_name }}-${{ github.run_id }}
+          path: |
+            ${{ steps.generate-markdown.outputs.output-path }}/technical-project.md
+            ${{ steps.generate-ui-test-catalog.outputs.output-path }}/ui-test-catalog.md
+            ${{ steps.generate-coverage.outputs.output-path }}/coverage-matrix.md
+            output/toolkit/coverage-matrix.json
+          if-no-files-found: error
+
+  publish-release-documentation:
+    if: ${{ github.event_name == 'release' }}
+    needs: generate-living-documentation
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download generated documents and coverage
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: living-documentation-${{ github.event_name }}-${{ github.run_id }}
+          path: output/living-documentation
+
+      - name: Attach release documents and coverage
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          gh release upload "$RELEASE_TAG" \
+            "output/living-documentation/generator-markdown/technical-project.md" \
+            "output/living-documentation/generator-markdown/ui-test-catalog.md" \
+            "output/living-documentation/generator-markdown/coverage-matrix.md" \
+            "output/living-documentation/toolkit/coverage-matrix.json" \
+            --clobber

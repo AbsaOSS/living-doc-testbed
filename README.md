@@ -7,8 +7,8 @@ the way living doc reads any repository, and check that the pipeline handles it 
 
 ## Rules
 
-- **Content only.** No living-doc tooling, workflow, config or expected output. The only workflow is the
-  PR-hygiene check.
+- **Fixture sources stay canonical.** The Living Doc workflow collects these sources but does not modify
+  them. Generated documents are workflow artifacts and release assets, never committed output.
 - **Every project follows the canon 100 %.** Headers, tags and scenarios are written to the canon on
   `living-doc` `master`. Problem cases are not authored here; `living-doc` derives them from a copy.
 - **`master` is read directly** by `living-doc`'s integration tests, so every merge must keep it canon-clean.
@@ -19,3 +19,9 @@ the way living doc reads any repository, and check that the pipeline handles it 
 | Project | Documentation source | What it is |
 |---|---|---|
 | [`core`](projects/core/README.md) | source headers: PageObjects and `.feature` files | A library-loans web app: online sign-up, catalogue search, borrowing and renewing loans. |
+
+## Generation pipeline
+
+The [Living Doc generation workflow](.github/workflows/living-documentation.yml) collects the `core`
+project sources and publishes generated output as CI artifacts and release assets. See the
+[generation guide](docs/living-doc-generation.md) for source paths, outputs, launchers, and verification.
