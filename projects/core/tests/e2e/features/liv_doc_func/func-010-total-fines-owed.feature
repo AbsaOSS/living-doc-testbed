@@ -30,6 +30,14 @@ Feature: My Loans Page - Total Fines Owed
     When the member opens the My Loans page
     Then the total fines owed is 1.60
 
+  # AC:FUNC-010-01 (v1.0.0 - active) - the total is the sum of every loan's fine
+  @AC:FUNC-010-01
+  @skip
+  Scenario: Small fines add up to the cent
+    Given the member owes 0.10 on "The Hobbit", 0.10 on "Dune" and 0.10 on "Emma"
+    When the member opens the My Loans page
+    Then the total fines owed is 0.30
+
   # AC:FUNC-010-02 (v1.0.0 - active) - a settled fine is left out of the total
   @AC:FUNC-010-02
   Scenario Outline: A settled fine is left out of the total
