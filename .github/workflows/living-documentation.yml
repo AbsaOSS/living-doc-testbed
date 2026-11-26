@@ -18,6 +18,7 @@ on:
       - .github/workflows/living-documentation.yml
       - projects/core/tests/e2e/features/liv_doc_us/**
       - projects/core/tests/e2e/features/liv_doc_func/**
+      - projects/core/tests/e2e/features/smoke/**
       - projects/core/tests/e2e/pages/**
   push:
     branches: [master, 'support/*']
@@ -67,7 +68,8 @@ jobs:
                 "repository-name": "living-doc-testbed",
                 "paths": [
                   "${{ github.workspace }}/projects/core/tests/e2e/features/liv_doc_us",
-                  "${{ github.workspace }}/projects/core/tests/e2e/features/liv_doc_func"
+                  "${{ github.workspace }}/projects/core/tests/e2e/features/liv_doc_func",
+                  "${{ github.workspace }}/projects/core/tests/e2e/features/smoke"
                 ]
               }
             ]

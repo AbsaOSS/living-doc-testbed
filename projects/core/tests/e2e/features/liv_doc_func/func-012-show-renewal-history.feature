@@ -16,4 +16,9 @@
 Feature: Loan Detail Page - Show Renewal History
   Lists when a loan was renewed.
 
-  # No scenarios yet: the behaviour is planned.
+  # AC:FUNC-012-01 (v1.2.0 - planned) - each renewal of a loan shows its date
+  @AC:FUNC-012-01
+  Scenario: A renewed loan lists the date of each renewal
+    Given the member renewed "Dune" on 2026-11-02 and on 2026-11-16
+    When the member opens the loan detail page for "Dune"
+    Then the renewal history lists 2026-11-02 and 2026-11-16

@@ -44,3 +44,29 @@ Feature: My Loans Page - Loan List States
     Given the loans service is unavailable
     When the member opens the My Loans page
     Then "Loans could not be loaded" is shown with a "Try again" button
+
+  # AC:FUNC-009-01 (v1.0.0 - active) - one row per loan with title and due date
+  @AC:FUNC-009-01
+  Scenario: Borrowed books are listed with their due dates
+    Given the member has borrowed these books:
+      | title      | due date   |
+      | The Hobbit | 2026-12-01 |
+      | Dune       | 2026-12-08 |
+    When the member opens the My Loans page
+    Then each book is listed in its own row with its due date
+
+  # AC:FUNC-009-02 (v1.0.0 - active) - an empty list says so and links to the catalogue
+  @AC:FUNC-009-02
+  Scenario: The empty state shows its message in full
+    Given the member has no loans
+    When the member opens the My Loans page
+    Then the empty state reads:
+      """
+      You have no books on loan.
+      Browse the catalogue to borrow one.
+      """
+
+  Scenario: The My Loans page opens from the menu
+    Given the member is on the home page
+    When the member chooses "My Loans" in the menu
+    Then the My Loans page is shown

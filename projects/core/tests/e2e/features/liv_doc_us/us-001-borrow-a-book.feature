@@ -66,3 +66,24 @@ Feature: Borrow a Book
     When the member borrows "Dune" from the catalogue
     Then a printable loan slip for "Dune" is offered
 
+  Rule: A member borrows within the loan limit of their category
+
+    Background:
+      Given the loan limit for the member's category is 3
+
+    # AC:US-001-01 (v1.0.0 - active) - a borrowed book shows on My Loans with its due date
+    @AC:US-001-01
+    Scenario: Borrowed books are listed with their due dates
+      Given the member holds 2 loans
+      And the book "Emma" is available
+      When the member borrows "Emma" from the catalogue
+      Then "Emma" is listed on the My Loans page with its due date
+
+    # AC:US-001-02 (v1.0.0 - active) - a member at the loan limit cannot borrow and is told why
+    @AC:US-001-02
+    Scenario: Member at the loan limit is told why they cannot borrow
+      Given the member holds 3 loans
+      And the book "Emma" is available
+      When the member tries to borrow "Emma" from the catalogue
+      Then the loan is refused with "You have reached your loan limit of 3"
+
