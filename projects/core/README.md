@@ -19,4 +19,4 @@ feature file opens with a living-doc header.
 | `tests/e2e/pages/` | PageObjects, one per screen; the sign-up wizard has one per step |
 | `tests/e2e/features/liv_doc_us/` | User Story feature files |
 | `tests/e2e/features/liv_doc_func/` | Functionality feature files |
-| `tests/e2e/features/smoke/` | Post-deployment smoke checks, not living documentation |
+| `tests/e2e/features/smoke/` | Post-deployment smoke checks: mined as UI tests, but not living documentation |

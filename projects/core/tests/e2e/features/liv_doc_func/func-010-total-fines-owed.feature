@@ -51,3 +51,20 @@ Feature: My Loans Page - Total Fines Owed
       | paid        |
       | waived      |
       | written-off |
+
+  # AC:FUNC-010-01 (v1.0.0 - active) - the total is the sum of every loan's fine
+  @AC:FUNC-010-01
+  Scenario Outline: The total adds up for any number of loans
+    Given the member owes <fine> on each of <loans> loans
+    When the member opens the My Loans page
+    Then the total fines owed is <total>
+
+    Examples: A few loans
+      | loans | fine | total |
+      | 1     | 0.40 | 0.40  |
+      | 3     | 0.40 | 1.20  |
+
+    @slow
+    Examples: Many loans
+      | loans | fine | total |
+      | 50    | 0.10 | 5.00  |
