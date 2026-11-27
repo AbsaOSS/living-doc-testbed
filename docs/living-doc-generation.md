@@ -15,8 +15,9 @@ release also receives the same files as release assets.
 | User Story headers and scenarios | `projects/core/tests/e2e/features/liv_doc_us/` | Documentation source and UI tests |
 | Functionality headers and scenarios | `projects/core/tests/e2e/features/liv_doc_func/` | Documentation source and UI tests |
 | PageObject headers | `projects/core/tests/e2e/pages/` | Documentation source |
+| Smoke scenarios | `projects/core/tests/e2e/features/smoke/` | UI tests only: mined as UI tests, but not living documentation |
 
-Smoke scenarios and project README files are not collector inputs.
+Project README files are not collector inputs.
 
 ## Pipeline outputs
 
@@ -57,7 +58,7 @@ uses them, and the file names carry them.
 
 | Launcher | When it runs | Expected result |
 | --- | --- | --- |
-| Pull request | Opened, synchronized, or reopened for `master` or `support/*`, when a source, workflow, or this guide changes | Generation succeeds and the four-file artifact is available for review |
+| Pull request | Opened, synchronized, or reopened for `master` or `support/*`, when the workflow file or a file under one of the [source](#sources) paths changes | Generation succeeds and the four-file artifact is available for review |
 | Push | Every push to `master` or `support/*` | Generation succeeds and the four-file artifact is available |
 | Manual dispatch | On demand, with `view=inner`, or `view=release` and a `release-version` | Generation succeeds with the selected documentation view and a four-file artifact |
 | Published release | When a GitHub Release is published | Generation succeeds, the four-file artifact is available, and all four release assets are attached |
@@ -78,7 +79,7 @@ find "$tmpdir" -type f
 
 Launcher-specific checks:
 
-- **Pull request:** open or update a PR with a change under one of the source paths or to the workflow/guide. Confirm the check runs. An unrelated-file-only PR should not start this workflow.
+- **Pull request:** open or update a PR with a change to the workflow file or under one of the source paths. Confirm the check runs. A PR that changes only other files, this guide included, should not start this workflow.
 - **Push:** after the workflow is on the default branch, push or merge a change to `master` or `support/*`; confirm an `event=push` run and artifact.
 - **Manual dispatch:** after the workflow is on the default branch, test both input values:
 
