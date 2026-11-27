@@ -11,6 +11,11 @@ on:
         options:
           - inner
           - release
+      release-version:
+        description: Release the documents describe, as X.Y.Z or vX.Y.Z; required when view is release.
+        required: false
+        type: string
+        default: ''
   pull_request:
     types: [opened, synchronize, reopened]
     branches: [master, 'support/*']
@@ -33,20 +38,61 @@ jobs:
     permissions:
       contents: read
     runs-on: ubuntu-latest
+    outputs:
+      document-suffix: ${{ steps.view.outputs.document-suffix }}
     steps:
+      - name: Resolve documentation view
+        id: view
+        shell: bash
+        env:
+          VIEW: ${{ inputs.view || (github.event_name == 'release' && 'release') || 'inner' }}
+          RELEASE_VERSION: ${{ github.event.release.tag_name || inputs.release-version }}
+        run: |
+          case "$VIEW" in
+            inner)
+              if [ -n "$RELEASE_VERSION" ]; then
+                echo "::warning::The inner view ignores the release-version input."
+              fi
+              release_version=''
+              document_suffix='inner'
+              ;;
+            release)
+              if [ -z "$RELEASE_VERSION" ]; then
+                echo "::error::The release view needs a release version: the release's tag, or the release-version input, as X.Y.Z or vX.Y.Z."
+                exit 1
+              fi
+              version="${RELEASE_VERSION#v}"
+              if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                echo "::error::The release version is not X.Y.Z or vX.Y.Z."
+                exit 1
+              fi
+              release_version="v$version"
+              document_suffix="release-v$version"
+              ;;
+            *)
+              echo "::error::Unknown view; expected inner or release."
+              exit 1
+              ;;
+          esac
+          {
+            echo "view=$VIEW"
+            echo "release-version=$release_version"
+            echo "document-suffix=$document_suffix"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Checkout repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4.2.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
           persist-credentials: false
 
       - name: Set up Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.0.0
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: '3.14'
 
       - name: Collect living documentation sources
-        uses: AbsaOSS/living-doc-collector-gh@b197a608d2dfc816a2934ae4fa6f2cdf3fb5b611 # v0.2.0
+        uses: AbsaOSS/living-doc-collector-gh@3219c9350e96d463a456e4384b4a58a117926233 # v0.3.0
         with:
           project-id: library-loans
           doc-source: true
@@ -75,56 +121,66 @@ jobs:
             ]
 
       - name: Normalize living documentation
-        uses: AbsaOSS/living-doc-toolkit@fea9aa62d7805fbc675a5816f513a7d0259b7075 # v0.1.0
+        uses: AbsaOSS/living-doc-toolkit@85e94232ba3294a1c8f86644ebe56d65b9d94a20 # v0.2.0
         with:
           command: normalize-docs
           input: output/collector-gh/doc-source/doc-source.json
           output: output/toolkit/generator-ready.json
-          view: ${{ inputs.view || (github.event_name == 'release' && 'release') || 'inner' }}
+          view: ${{ steps.view.outputs.view }}
 
       - name: Normalize UI tests
-        uses: AbsaOSS/living-doc-toolkit@fea9aa62d7805fbc675a5816f513a7d0259b7075 # v0.1.0
+        uses: AbsaOSS/living-doc-toolkit@85e94232ba3294a1c8f86644ebe56d65b9d94a20 # v0.2.0
         with:
           command: normalize-tests
-          input: output/collector-gh/ui-tests/ui-tests.json
+          input: output/collector-gh/doc-source/doc-source.json
+          tests-input: output/collector-gh/ui-tests/ui-tests.json
           output: output/toolkit/ui-test-catalog.json
+          view: ${{ steps.view.outputs.view }}
 
       - name: Build coverage matrix
-        uses: AbsaOSS/living-doc-toolkit@fea9aa62d7805fbc675a5816f513a7d0259b7075 # v0.1.0
+        uses: AbsaOSS/living-doc-toolkit@85e94232ba3294a1c8f86644ebe56d65b9d94a20 # v0.2.0
         with:
           command: coverage-matrix
           input: output/collector-gh/doc-source/doc-source.json
           tests-input: output/collector-gh/ui-tests/ui-tests.json
           output: output/toolkit/coverage-matrix.json
-          view: ${{ inputs.view || (github.event_name == 'release' && 'release') || 'inner' }}
+          view: ${{ steps.view.outputs.view }}
 
       - name: Generate technical project Markdown
         id: generate-markdown
-        uses: AbsaOSS/living-doc-generator-markdown@005a058ae6b248a66c34e8bacdbe2217bb2a981d # v0.1.0
+        uses: AbsaOSS/living-doc-generator-markdown@d0e8b49cdaf9b6892327f8849742736408baeda3 # v0.2.0
         with:
           document-type: technical-project
           source-path: output/toolkit/generator-ready.json
+          release-version: ${{ steps.view.outputs.release-version }}
 
       - name: Generate UI test catalog Markdown
         id: generate-ui-test-catalog
-        uses: AbsaOSS/living-doc-generator-markdown@005a058ae6b248a66c34e8bacdbe2217bb2a981d # v0.1.0
+        uses: AbsaOSS/living-doc-generator-markdown@d0e8b49cdaf9b6892327f8849742736408baeda3 # v0.2.0
         with:
           document-type: ui-test-catalog
           source-path: output/toolkit/ui-test-catalog.json
+          release-version: ${{ steps.view.outputs.release-version }}
 
       - name: Generate coverage Markdown
         id: generate-coverage
-        uses: AbsaOSS/living-doc-generator-markdown@005a058ae6b248a66c34e8bacdbe2217bb2a981d # v0.1.0
+        uses: AbsaOSS/living-doc-generator-markdown@d0e8b49cdaf9b6892327f8849742736408baeda3 # v0.2.0
         with:
           document-type: coverage-matrix
           source-path: output/toolkit/coverage-matrix.json
+          release-version: ${{ steps.view.outputs.release-version }}
 
       - name: Validate generated outputs
         shell: bash
+        env:
+          DOCUMENT_SUFFIX: ${{ steps.view.outputs.document-suffix }}
+          TECHNICAL_PROJECT_DIR: ${{ steps.generate-markdown.outputs.output-path }}
+          UI_TEST_CATALOG_DIR: ${{ steps.generate-ui-test-catalog.outputs.output-path }}
+          COVERAGE_DIR: ${{ steps.generate-coverage.outputs.output-path }}
         run: |
-          test -s "${{ steps.generate-markdown.outputs.output-path }}/technical-project.md"
-          test -s "${{ steps.generate-ui-test-catalog.outputs.output-path }}/ui-test-catalog.md"
-          test -s "${{ steps.generate-coverage.outputs.output-path }}/coverage-matrix.md"
+          test -s "$TECHNICAL_PROJECT_DIR/technical-project-$DOCUMENT_SUFFIX.md"
+          test -s "$UI_TEST_CATALOG_DIR/ui-test-catalog-$DOCUMENT_SUFFIX.md"
+          test -s "$COVERAGE_DIR/coverage-matrix-$DOCUMENT_SUFFIX.md"
           test -s output/toolkit/coverage-matrix.json
 
       - name: Upload generated documents and coverage
@@ -132,9 +188,9 @@ jobs:
         with:
           name: living-documentation-${{ github.event_name }}-${{ github.run_id }}
           path: |
-            ${{ steps.generate-markdown.outputs.output-path }}/technical-project.md
-            ${{ steps.generate-ui-test-catalog.outputs.output-path }}/ui-test-catalog.md
-            ${{ steps.generate-coverage.outputs.output-path }}/coverage-matrix.md
+            ${{ steps.generate-markdown.outputs.output-path }}/technical-project-${{ steps.view.outputs.document-suffix }}.md
+            ${{ steps.generate-ui-test-catalog.outputs.output-path }}/ui-test-catalog-${{ steps.view.outputs.document-suffix }}.md
+            ${{ steps.generate-coverage.outputs.output-path }}/coverage-matrix-${{ steps.view.outputs.document-suffix }}.md
             output/toolkit/coverage-matrix.json
           if-no-files-found: error
 
@@ -155,11 +211,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.event.release.tag_name }}
+          DOCUMENT_SUFFIX: ${{ needs.generate-living-documentation.outputs.document-suffix }}
         run: |
           gh release upload "$RELEASE_TAG" \
-            "output/living-documentation/generator-markdown/technical-project.md" \
-            "output/living-documentation/generator-markdown/ui-test-catalog.md" \
-            "output/living-documentation/generator-markdown/coverage-matrix.md" \
+            "output/living-documentation/generator-markdown/technical-project-$DOCUMENT_SUFFIX.md" \
+            "output/living-documentation/generator-markdown/ui-test-catalog-$DOCUMENT_SUFFIX.md" \
+            "output/living-documentation/generator-markdown/coverage-matrix-$DOCUMENT_SUFFIX.md" \
             "output/living-documentation/toolkit/coverage-matrix.json" \
             --repo "$GITHUB_REPOSITORY" \
             --clobber
