@@ -46,7 +46,8 @@ uses them, and the file names carry them.
 | Manual dispatch | the `view` input | the `release-version` input, required when `view` is `release` |
 | Published release | `release` | the release's tag |
 
-- A release version is `X.Y.Z` or `vX.Y.Z`; both name the files `release-vX.Y.Z`
+- A release version is a release's `X.Y.Z` or a release candidate's `X.Y.ZrcN`, with or without a leading `v`;
+  `0.3.0` and `v0.3.0` both name the files `release-v0.3.0`, and `v0.3.0rc1` names them `release-v0.3.0rc1`
 - A release view without a release version, or with one in another form, fails the first step, before
   anything is collected
 - The UI test catalog follows the view too: the release view drops the links to `planned` and `in_review`
