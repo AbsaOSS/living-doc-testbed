@@ -32,9 +32,9 @@ renders three Markdown documents, all in one documentation view. Every event upl
 | `coverage-matrix-<view>.md` | Rendered documentation-to-test coverage |
 | `coverage-matrix.json` | Structured coverage data |
 
-`<view>` is `inner` in the inner view, and `release-vX.Y.Z` in the release view, for example
-`technical-project-release-v0.2.0.md`. For a release, these four files are also attached to the published
-GitHub Release.
+`<view>` is `inner` in the inner view, and `release-v<version>` in the release view, for example
+`technical-project-release-v0.2.0.md` or `technical-project-release-v0.3.0rc1.md` ([Views](#views)). For a
+release, these four files are also attached to the published GitHub Release.
 
 ## Views
 
@@ -61,7 +61,7 @@ uses them, and the file names carry them.
 | Pull request | Opened, synchronized, or reopened for `master` or `support/*`, when the workflow file or a file under one of the [source](#sources) paths changes | Generation succeeds and the four-file artifact is available for review |
 | Push | Every push to `master` or `support/*` | Generation succeeds and the four-file artifact is available |
 | Manual dispatch | On demand, with `view=inner`, or `view=release` and a `release-version` | Generation succeeds with the selected documentation view and a four-file artifact |
-| Published release | When a GitHub Release is published | Generation succeeds, the four-file artifact is available, and all four release assets are attached |
+| Published release | When a GitHub Release is published, a release candidate's pre-release included | Generation succeeds, the four-file artifact is available, and all four release assets are attached |
 
 ## Verification
 
